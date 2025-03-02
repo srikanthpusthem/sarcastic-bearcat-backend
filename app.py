@@ -6,22 +6,28 @@ import uvicorn
 import os
 from dotenv import load_dotenv
 
+# Load environment variables (works locally and on Render)
 load_dotenv()
+
 app = FastAPI()
 
 # OpenRouter API setup
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-YOUR_SITE_URL = "http://localhost:3001"
+YOUR_SITE_URL = os.getenv("SITE_URL", "https://sarcastic-bearcat.vercel.app")  # Default to Vercel frontend
 YOUR_SITE_NAME = "Sarcastic Bearcat"
 
 # GIPHY API setup
 GIPHY_API_KEY = os.getenv("GIPHY_API_KEY")
 GIPHY_URL = "https://api.giphy.com/v1/gifs/random"
 
+# CORS setup (allow Vercel frontend or local dev)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3001"],
+    allow_origins=[
+        "http://localhost:3001",  # Local React dev
+        "https://sarcastic-bearcat.vercel.app"  # Deployed frontend
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -82,4 +88,6 @@ async def get_sarcastic_response(message: str, history: str = ""):
     return {"sarcasm": sarcasm, "gif": gif_url}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # For Render, use environment PORT or default to 8000 locally
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
